@@ -33,20 +33,40 @@ V1 blocks a UEFI-booted Linux host unless that exact long-term CHR release has p
 
 ## Run preflight first
 
-Download the release manually or use the bootstrap:
+### GitHub bootstrap
+
+If the server can reach GitHub, run:
 
 ```bash
 sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/parhamfa/chr-install/main/installer.sh)" -- --preflight
 ```
 
-Preflight does not modify the server. It reports the resolved target disk, installation path, current addresses and routes, DNS, MTU, DHCP availability, current RouterOS long-term release, and any blockers.
+### Manual upload
 
-Static Linux AMD64 binaries and their SHA-256 checksums are available from [GitHub Releases](https://github.com/parhamfa/chr-install/releases/latest).
+If the server cannot reach GitHub, download the latest [Linux AMD64 binary](https://github.com/parhamfa/chr-install/releases/latest/download/chr-install-linux-amd64) on another computer. Before transferring it, verify it against the published [SHA-256 checksum](https://github.com/parhamfa/chr-install/releases/latest/download/chr-install-linux-amd64.sha256) with `sha256sum --check chr-install-linux-amd64.sha256` or an equivalent tool.
+
+Upload only `chr-install-linux-amd64` to an executable filesystem on the server using SCP, SFTP, or the provider's file-transfer facility. From the directory containing the uploaded binary, run:
+
+```bash
+chmod 0700 chr-install-linux-amd64 && sudo ./chr-install-linux-amd64 --preflight
+```
+
+This method makes no GitHub request from the server. The installer still requires outbound HTTPS access to MikroTik to discover and download the RouterOS release, CHR image, and official checksum.
+
+Preflight does not modify the server. It reports the resolved target disk, installation path, current addresses and routes, DNS, MTU, DHCP availability, current RouterOS long-term release, and any blockers.
 
 ## Install
 
+With the GitHub bootstrap:
+
 ```bash
 sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/parhamfa/chr-install/main/installer.sh)"
+```
+
+Or, with the manually uploaded binary:
+
+```bash
+chmod 0700 chr-install-linux-amd64 && sudo ./chr-install-linux-amd64
 ```
 
 The wizard will:
