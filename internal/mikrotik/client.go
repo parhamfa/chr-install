@@ -40,14 +40,19 @@ type testedRelease struct {
 	UEFIArchiveSHA256 string
 }
 
-// Versions are added only after image injection and real CHR boot testing. CHR
-// 7.21.5 uses ext2 for its EFI-designated boot partition, so UEFI support means
-// the installer-prepared FAT16 variant has passed the full OVMF matrix.
+// Versions are added only after image injection and real CHR boot testing.
+// These images use ext2 for their EFI-designated boot partition, so UEFI support
+// means the installer-prepared FAT16 variant has passed the full OVMF matrix.
 var testedVersions = map[string]testedRelease{
 	"7.21.5": {
 		BIOS:              true,
 		UEFI:              true,
 		UEFIArchiveSHA256: "dbb8f1739da73a68e5167fcbc731a5ba3d50f9d9b195731b96f96fcc58904580",
+	},
+	"7.23.5": {
+		BIOS:              true,
+		UEFI:              true,
+		UEFIArchiveSHA256: "f6b0cde630d59a59ec5fb0d303aa26a8a1723dfbc62e6afc2a27715278c87dd9",
 	},
 }
 

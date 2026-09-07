@@ -41,6 +41,7 @@ func TestQEMUBoot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("Testing RouterOS %s (archive SHA-256 %s)", release.Version, release.Checksum)
 	if archivePath := os.Getenv("CHR_QEMU_ARCHIVE"); archivePath != "" {
 		if _, err := os.Stat(archivePath); err != nil {
 			t.Fatal(err)
@@ -233,7 +234,7 @@ func (console *serialConsole) waitForAny(after int, timeout time.Duration, marke
 }
 
 func verifyRouterOSConsole(console *serialConsole, plan model.NetworkPlan) error {
-	if _, err := console.waitForAny(0, 90*time.Second, "MikroTik Login: "); err != nil {
+	if _, err := console.waitForAny(0, 90*time.Second, "MikroTik Login: ", "CHR Login: "); err != nil {
 		return err
 	}
 	if err := console.send("admin\r"); err != nil {
