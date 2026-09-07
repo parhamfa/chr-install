@@ -14,52 +14,63 @@ import (
 )
 
 func TestResolveLatest(t *testing.T) {
-	checksum := testedVersions["7.21.5"].UEFIArchiveSHA256
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		switch request.URL.Path {
-		case "/latest":
-			_, _ = writer.Write([]byte("7.21.5 1234\n"))
-		case "/7.21.5/chr-7.21.5.img.zip.sha256":
-			_, _ = fmt.Fprintf(writer, "%s  chr-7.21.5.img.zip\n", checksum)
-		default:
-			http.NotFound(writer, request)
-		}
-	}))
-	defer server.Close()
-	client := NewClient()
-	client.UpgradeURL = server.URL + "/latest"
-	client.DownloadBase = server.URL
-	release, err := client.ResolveLatest(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if release.Version != "7.21.5" || release.Checksum != checksum || !release.Tested || !release.UEFIBoot {
-		t.Fatalf("unexpected release: %#v", release)
+	for _, version := range []string{"7.21.5", "7.23.5"} {
+		t.Run(version, func(t *testing.T) {
+			checksum := testedVersions[version].UEFIArchiveSHA256
+			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/latest":
+					_, _ = fmt.Fprintf(writer, "%s 1234\n", version)
+				case "/" + version + "/chr-" + version + ".img.zip.sha256":
+					_, _ = fmt.Fprintf(writer, "%s  chr-%s.img.zip\n", checksum, version)
+				default:
+					http.NotFound(writer, request)
+				}
+			}))
+			defer server.Close()
+			client := NewClient()
+			client.UpgradeURL = server.URL + "/latest"
+			client.DownloadBase = server.URL
+			release, err := client.ResolveLatest(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if release.Version != version || release.Checksum != checksum || !release.Tested || !release.UEFIBoot {
+				t.Fatalf("unexpected release: %#v", release)
+			}
+		})
 	}
 }
 
-func TestResolveLatestDisablesUEFIForChangedArchive(t *testing.T) {
+func TestResolveLatestDisablesUEFIForUnvalidatedArchive(t *testing.T) {
 	checksum := fmt.Sprintf("%x", sha256.Sum256([]byte("replacement archive")))
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		switch request.URL.Path {
-		case "/latest":
-			_, _ = writer.Write([]byte("7.21.5 1234\n"))
-		case "/7.21.5/chr-7.21.5.img.zip.sha256":
-			_, _ = fmt.Fprintf(writer, "%s  chr-7.21.5.img.zip\n", checksum)
-		default:
-			http.NotFound(writer, request)
-		}
-	}))
-	defer server.Close()
-	client := NewClient()
-	client.UpgradeURL = server.URL + "/latest"
-	client.DownloadBase = server.URL
-	release, err := client.ResolveLatest(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if release.UEFIBoot {
-		t.Fatalf("changed archive was incorrectly authorized for UEFI: %#v", release)
+	for _, version := range []string{"7.21.5", "7.23.5", "7.99.1"} {
+		t.Run(version, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				switch request.URL.Path {
+				case "/latest":
+					_, _ = fmt.Fprintf(writer, "%s 1234\n", version)
+				case "/" + version + "/chr-" + version + ".img.zip.sha256":
+					_, _ = fmt.Fprintf(writer, "%s  chr-%s.img.zip\n", checksum, version)
+				default:
+					http.NotFound(writer, request)
+				}
+			}))
+			defer server.Close()
+			client := NewClient()
+			client.UpgradeURL = server.URL + "/latest"
+			client.DownloadBase = server.URL
+			release, err := client.ResolveLatest(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if release.UEFIBoot {
+				t.Fatalf("unvalidated archive was incorrectly authorized for UEFI: %#v", release)
+			}
+			if version == "7.99.1" && release.Tested {
+				t.Fatalf("unknown version was incorrectly marked as tested: %#v", release)
+			}
+		})
 	}
 }
 
