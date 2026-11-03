@@ -17,7 +17,7 @@ It is intentionally not a RouterOS hardening tool. It does not create passwords 
 - AMD64 only
 - Debian 12 and 13
 - Ubuntu 22.04, 24.04, and 26.04 LTS
-- Firmware modes validated for the exact RouterOS release (7.21.5, 7.23.5, 7.23.7, and 7.23.8: legacy BIOS and installer-prepared UEFI)
+- Firmware modes validated for the exact RouterOS release (7.21.5, 7.23.5, 7.23.7, 7.23.8, and 7.24.6: legacy BIOS and installer-prepared UEFI)
 - One unambiguous local boot disk
 - A reboot-observable serial or WWN for the target when additional physical disks are visible
 - One Ethernet uplink with a single routing policy
@@ -29,7 +29,7 @@ It is intentionally not a RouterOS hardening tool. It does not create passwords 
 
 The preflight rejects RAID, multipath, ambiguous rescue disks, multiple uplinks/default routes, policy routing, VLANs, bonds, bridges, PPP, and other layouts that v1 cannot translate credibly.
 
-V1 blocks a UEFI-booted Linux host unless that exact long-term CHR release has passed the installer's UEFI preparation and boot matrix. The official CHR 7.21.5, 7.23.5, 7.23.7, and 7.23.8 images place `BOOTX64.EFI` and their boot maps on an ext2 partition that standard UEFI firmware cannot read. On a validated UEFI host, the installer copies those verified files into a deterministic FAT16 filesystem in the same existing 32 MiB EFI-designated partition. It does not add or move partitions, and BIOS hosts retain the official ext2 boot partition unchanged.
+V1 blocks a UEFI-booted Linux host unless that exact long-term CHR release has passed the installer's UEFI preparation and boot matrix. The official CHR 7.21.5, 7.23.5, 7.23.7, 7.23.8, and 7.24.6 images place `BOOTX64.EFI` and their boot maps on an ext2 partition that standard UEFI firmware cannot read. On a validated UEFI host, the installer copies those verified files into a deterministic FAT16 filesystem in the same existing 32 MiB EFI-designated partition. It does not add or move partitions, and BIOS hosts retain the official ext2 boot partition unchanged.
 
 ## Run preflight first
 
