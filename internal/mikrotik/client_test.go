@@ -14,7 +14,7 @@ import (
 )
 
 func TestResolveLatest(t *testing.T) {
-	for _, version := range []string{"7.21.5", "7.23.5", "7.23.7", "7.23.8"} {
+	for _, version := range []string{"7.21.5", "7.23.5", "7.23.7", "7.23.8", "7.24.6"} {
 		t.Run(version, func(t *testing.T) {
 			checksum := testedVersions[version].UEFIArchiveSHA256
 			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -44,7 +44,7 @@ func TestResolveLatest(t *testing.T) {
 
 func TestResolveLatestDisablesUEFIForUnvalidatedArchive(t *testing.T) {
 	checksum := fmt.Sprintf("%x", sha256.Sum256([]byte("replacement archive")))
-	for _, version := range []string{"7.21.5", "7.23.5", "7.23.7", "7.23.8", "7.99.1"} {
+	for _, version := range []string{"7.21.5", "7.23.5", "7.23.7", "7.23.8", "7.24.6", "7.99.1"} {
 		t.Run(version, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				switch request.URL.Path {
