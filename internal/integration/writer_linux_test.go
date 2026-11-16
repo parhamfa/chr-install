@@ -22,6 +22,15 @@ import (
 	"github.com/parhamfa/chr-install/internal/model"
 )
 
+// writerQEMUCPU is the guest CPU model for every VM that boots the runner's
+// own kernel and initramfs. Those initramfs binaries come from the runner's
+// userland, and the Ubuntu 26.04 runner image installs amd64v3 builds that
+// execute AVX/AVX2 unconditionally. TCG's default qemu64 model lacks AVX, so
+// the guest's first dynamically linked process traps with an invalid opcode;
+// "max" exposes every feature TCG can emulate. On a real server the staged
+// initramfs runs on the same CPU that already runs those binaries.
+const writerQEMUCPU = "max"
+
 func TestStagedWriterQEMU(t *testing.T) {
 	if os.Getenv("CHR_WRITER_INTEGRATION") != "1" {
 		t.Skip("set CHR_WRITER_INTEGRATION=1 with kernel version and binary paths")
@@ -96,7 +105,7 @@ func TestStagedWriterQEMU(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	arguments := []string{
-		"-machine", "q35,accel=tcg", "-m", "768", "-nographic", "-no-reboot",
+		"-machine", "q35,accel=tcg", "-cpu", writerQEMUCPU, "-m", "768", "-nographic", "-no-reboot",
 		"-kernel", kernel, "-initrd", stagedInitrd,
 		"-append", "console=ttyS0 root=" + targetDisk.Path + " rootfstype=ext4 ro panic=-1 chr.install=1",
 	}
@@ -270,7 +279,7 @@ menuentry 'CHR Install Writer' --id 'chr-install-writer' {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	arguments := []string{
-		"-machine", "q35,accel=tcg", "-m", "768", "-nographic", "-no-reboot",
+		"-machine", "q35,accel=tcg", "-cpu", writerQEMUCPU, "-m", "768", "-nographic", "-no-reboot",
 		"-drive", "if=none,file=" + bootPath + ",format=raw,id=boot",
 		"-device", "virtio-blk-pci,drive=boot,serial=chr-grub-boot,bootindex=1",
 	}
@@ -315,7 +324,7 @@ menuentry 'CHR Install Writer' --id 'chr-install-writer' {
 	fallbackContext, fallbackCancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer fallbackCancel()
 	fallbackProcess := exec.CommandContext(fallbackContext, "qemu-system-x86_64",
-		"-machine", "q35,accel=tcg", "-m", "256", "-nographic", "-no-reboot",
+		"-machine", "q35,accel=tcg", "-cpu", writerQEMUCPU, "-m", "256", "-nographic", "-no-reboot",
 		"-drive", "if=none,file="+bootPath+",format=raw,id=boot",
 		"-device", "virtio-blk-pci,drive=boot,serial=chr-grub-boot,bootindex=1",
 	)
@@ -440,7 +449,7 @@ exec /sbin/kexec -e
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	arguments := []string{
-		"-machine", "q35,accel=tcg", "-m", "1024", "-nographic", "-no-reboot",
+		"-machine", "q35,accel=tcg", "-cpu", writerQEMUCPU, "-m", "1024", "-nographic", "-no-reboot",
 		"-kernel", kernel, "-initrd", launcherInitrd,
 		"-append", "console=ttyS0 root=/dev/vda rootfstype=ext4 ro panic=-1",
 	}
@@ -694,7 +703,7 @@ exec /sbin/chr-disk-probe %s >/dev/console 2>&1
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 	arguments := []string{
-		"-machine", "q35,accel=tcg", "-m", "512", "-nographic", "-no-reboot",
+		"-machine", "q35,accel=tcg", "-cpu", writerQEMUCPU, "-m", "512", "-nographic", "-no-reboot",
 		"-kernel", kernel, "-initrd", probeInitrd,
 		"-append", "console=ttyS0 root=" + targetPath + " rootfstype=ext4 ro panic=-1",
 	}
