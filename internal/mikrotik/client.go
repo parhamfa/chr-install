@@ -69,6 +69,11 @@ var testedVersions = map[string]testedRelease{
 		UEFI:              true,
 		UEFIArchiveSHA256: "692672e6cac9cfaa4f37c6334d07760d49e074b50befc61f0904270553f17126",
 	},
+	"7.24.7": {
+		BIOS:              true,
+		UEFI:              true,
+		UEFIArchiveSHA256: "fc690ac62f0244586baafeb6fc886f277a371ec31b6e7cccb61d237e848cdb6e",
+	},
 }
 
 type Client struct {

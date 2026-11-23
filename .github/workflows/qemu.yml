@@ -60,7 +60,7 @@ jobs:
           go-version: "1.24.x"
           cache: true
       - name: Install QEMU
-        run: sudo env DEBIAN_FRONTEND=noninteractive apt-get update && sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system-x86 linux-image-generic grub-pc-bin grub2-common e2fsprogs fdisk kexec-tools
+        run: sudo env DEBIAN_FRONTEND=noninteractive apt-get update && sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system-x86 linux-image-virtual grub-pc-bin grub2-common e2fsprogs fdisk kexec-tools
       - name: Build writer binary
         env:
           CGO_ENABLED: "0"
