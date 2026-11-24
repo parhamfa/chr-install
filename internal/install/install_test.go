@@ -109,9 +109,13 @@ func (*initramfsFixtureRunner) LookPath(name string) (string, error) {
 }
 
 func TestWriterCmdline(t *testing.T) {
-	got := writerCmdline("BOOT_IMAGE=/boot/vmlinuz root=/dev/sda1 ro quiet initrd=/boot/initrd chr.install=old")
-	if got != "root=/dev/sda1 ro quiet chr.install=1" {
-		t.Fatalf("writerCmdline() = %q", got)
+	for input, want := range map[string]string{
+		"BOOT_IMAGE=/boot/vmlinuz root=/dev/sda1 ro quiet initrd=/boot/initrd chr.install=old": "root=/dev/sda1 ro quiet kho=off chr.install=1",
+		"root=/dev/vda ro kho=on kho_scratch=200%":                                             "root=/dev/vda ro kho_scratch=200% kho=off chr.install=1",
+	} {
+		if got := WriterCmdline(input); got != want {
+			t.Fatalf("WriterCmdline(%q) = %q, want %q", input, got, want)
+		}
 	}
 }
 

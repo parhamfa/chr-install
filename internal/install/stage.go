@@ -150,7 +150,7 @@ func PrepareStage(ctx context.Context, runner command.Runner, disk model.Disk, i
 	if err != nil {
 		return Stage{}, err
 	}
-	cmdline := writerCmdline(string(cmdlineData))
+	cmdline := WriterCmdline(string(cmdlineData))
 	stage = Stage{Method: disk.Method, KernelPath: disk.KernelPath, Cmdline: cmdline}
 	partialFiles := []string{}
 	partialDirs := []string{}
@@ -407,15 +407,27 @@ func kernelVersion(kernelPath string) string {
 	return strings.TrimPrefix(filepath.Base(kernelPath), "vmlinuz-")
 }
 
-func writerCmdline(input string) string {
+// WriterCmdline derives the staged writer's kernel command line from the
+// running host's command line.
+//
+// It always appends kho=off. Kernels built with
+// CONFIG_KEXEC_HANDOVER_ENABLE_DEFAULT (Ubuntu 26.04's 7.0 kernels) reserve
+// kexec-handover scratch areas at boot sized at twice the memory already in
+// use, and hand them to the page allocator as CMA, which only movable pages
+// may use. The staged initramfs carries the whole CHR image, so on a small
+// host those areas can leave the kernel too little ordinary memory to finish
+// booting, and it panics on out-of-memory before the writer starts. The
+// writer boot never performs a kexec handover itself, so it does not need
+// the scratch areas.
+func WriterCmdline(input string) string {
 	var result []string
 	for _, field := range strings.Fields(input) {
-		if strings.HasPrefix(field, "BOOT_IMAGE=") || strings.HasPrefix(field, "initrd=") || strings.HasPrefix(field, "rdinit=") || strings.HasPrefix(field, "chr.install=") {
+		if strings.HasPrefix(field, "BOOT_IMAGE=") || strings.HasPrefix(field, "initrd=") || strings.HasPrefix(field, "rdinit=") || strings.HasPrefix(field, "chr.install=") || strings.HasPrefix(field, "kho=") {
 			continue
 		}
 		result = append(result, field)
 	}
-	result = append(result, "chr.install=1")
+	result = append(result, "kho=off", "chr.install=1")
 	return strings.Join(result, " ")
 }
 
