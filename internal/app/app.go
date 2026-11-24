@@ -106,7 +106,7 @@ func Run(ctx context.Context, options Options) error {
 		executable = filepath.Clean(os.Args[0])
 	}
 	manifest := install.NewManifest(reportValue.Disk.Fingerprint, prepared.Path, prepared.SHA256, prepared.SizeBytes, prepared.Release, review.Network)
-	return install.StageAndBoot(ctx, runner, reportValue.Disk, prepared.Path, executable, manifest, reportValue.Host.MemoryBytes)
+	return install.StageAndBoot(ctx, runner, options.Output, reportValue.Disk, prepared.Path, executable, manifest, reportValue.Host.MemoryBytes)
 }
 
 func ReadyForInstall(report model.Preflight) bool {

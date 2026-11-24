@@ -37,7 +37,7 @@ const (
 	cleanupTimeout  = 2 * time.Minute
 )
 
-func StageAndBoot(ctx context.Context, runner command.Runner, disk model.Disk, preparedImage, executable string, manifest Manifest, memoryBytes uint64) error {
+func StageAndBoot(ctx context.Context, runner command.Runner, output io.Writer, disk model.Disk, preparedImage, executable string, manifest Manifest, memoryBytes uint64) error {
 	if disk.Method == model.InstallMethodDirect {
 		manifest.ImagePath = preparedImage
 		manifestPath := filepath.Join(filepath.Dir(preparedImage), "writer-manifest.json")
@@ -54,14 +54,18 @@ func StageAndBoot(ctx context.Context, runner command.Runner, disk model.Disk, p
 		return errors.Join(fmt.Errorf("sync staged writer: %w", err), cleanupStage(runner, stage, false, false))
 	}
 	if stage.Method == model.InstallMethodKexec {
-		kexecErr := executeKexec(ctx, runner, stage)
+		kexecErr := kexecMemoryReady(stage)
 		if kexecErr == nil {
-			return nil
+			kexecErr = executeKexec(ctx, runner, stage)
+			if kexecErr == nil {
+				return nil
+			}
 		}
 		cleanupErr := cleanupStage(runner, stage, false, false)
 		if cleanupErr != nil || !disk.GRUB {
 			return errors.Join(kexecErr, cleanupErr)
 		}
+		fmt.Fprintf(output, "Cannot start the writer with kexec: %v\nRebooting into the writer through GRUB instead…\n", kexecErr)
 		disk.Method = model.InstallMethodGRUB
 		stage, stageErr := PrepareStage(ctx, runner, disk, preparedImage, executable, manifest, memoryBytes)
 		if stageErr != nil {
