@@ -107,7 +107,7 @@ func TestStagedWriterQEMU(t *testing.T) {
 	arguments := []string{
 		"-machine", "q35,accel=tcg", "-cpu", writerQEMUCPU, "-m", "768", "-nographic", "-no-reboot",
 		"-kernel", kernel, "-initrd", stagedInitrd,
-		"-append", "console=ttyS0 root=" + targetDisk.Path + " rootfstype=ext4 ro panic=-1 chr.install=1",
+		"-append", install.WriterCmdline("console=ttyS0 root=" + targetDisk.Path + " rootfstype=ext4 ro panic=-1"),
 	}
 	arguments = append(arguments, diskArguments...)
 	process := exec.CommandContext(ctx, "qemu-system-x86_64", arguments...)
@@ -252,10 +252,10 @@ menuentry 'Fallback Linux' --id 'fallback-linux' {
 }
 menuentry 'CHR Install Writer' --id 'chr-install-writer' {
   search --no-floppy --fs-uuid --set=root %s
-  linux /boot/vmlinuz console=ttyS0 root=/dev/vda rootfstype=ext4 ro panic=-1 chr.install=1
+  linux /boot/vmlinuz %s
   initrd /boot/initrd.img
 }
-`, uuid)
+`, uuid, install.WriterCmdline("console=ttyS0 root=/dev/vda rootfstype=ext4 ro panic=-1"))
 	grubDirectory := filepath.Join(bootDirectory, "grub")
 	if err := os.WriteFile(filepath.Join(grubDirectory, "grub.cfg"), []byte(configuration), 0o600); err != nil {
 		t.Fatal(err)
@@ -434,7 +434,7 @@ PREREQ=""
 prereqs() { echo "$PREREQ"; }
 case "${1:-}" in prereqs) prereqs; exit 0 ;; esac
 echo "CHR-KEXEC-LAUNCH" >/dev/console
-/sbin/kexec -l /chr-kexec/vmlinuz --initrd=/chr-kexec/writer-initrd.img --append="console=ttyS0 root=/dev/vda rootfstype=ext4 ro panic=-1 chr.install=1"
+/sbin/kexec -l /chr-kexec/vmlinuz --initrd=/chr-kexec/writer-initrd.img --append="` + install.WriterCmdline("console=ttyS0 root=/dev/vda rootfstype=ext4 ro panic=-1") + `"
 sync
 exec /sbin/kexec -e
 `
@@ -705,7 +705,9 @@ exec /sbin/chr-disk-probe %s >/dev/console 2>&1
 	arguments := []string{
 		"-machine", "q35,accel=tcg", "-cpu", writerQEMUCPU, "-m", "512", "-nographic", "-no-reboot",
 		"-kernel", kernel, "-initrd", probeInitrd,
-		"-append", "console=ttyS0 root=" + targetPath + " rootfstype=ext4 ro panic=-1",
+		// kho=off for the same reason as install.WriterCmdline: this probe
+		// boots a large initramfs in 512 MiB.
+		"-append", "console=ttyS0 root=" + targetPath + " rootfstype=ext4 ro panic=-1 kho=off",
 	}
 	arguments = append(arguments, diskArguments...)
 	process := exec.CommandContext(ctx, "qemu-system-x86_64", arguments...)
